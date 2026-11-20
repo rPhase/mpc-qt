@@ -1064,11 +1064,17 @@ TrackInfo::TrackInfo(const QUrl &url, const QUuid &list, const QUuid &item, QStr
 
 QVariantMap TrackInfo::toVMap() const
 {
-    return QVariantMap({{"url", url}, {"list", list}, {"item", item},
-                        {"text", title}, {"length", length},
-                        {"position", position}, {"videoTrack", (long long) videoTrack},
-                        {"audioTrack", (long long) audioTrack},
-                        {"subtitleTrack", (long long) subtitleTrack}});
+    QVariantMap map({{"url", url}, {"list", list}, {"item", item},
+                     {"text", title}, {"length", length},
+                     {"position", position}, {"videoTrack", (long long) videoTrack},
+                     {"audioTrack", (long long) audioTrack},
+                     {"subtitleTrack", (long long) subtitleTrack}});
+    // Only written when set, so recents and old favorites files stay unchanged
+    if (hasLoop()) {
+        map.insert("loopA", loopA);
+        map.insert("loopB", loopB);
+    }
+    return map;
 }
 
 void TrackInfo::fromVMap(const QVariantMap &map)
@@ -1084,6 +1090,8 @@ void TrackInfo::fromVMap(const QVariantMap &map)
     videoTrack = map.value("videoTrack").toLongLong();
     audioTrack = map.value("audioTrack").toLongLong();
     subtitleTrack = map.value("subtitleTrack").toLongLong();
+    loopA = map.value("loopA", -1).toDouble();
+    loopB = map.value("loopB", -1).toDouble();
     // FIXME: this is only needed for as long as users recents and favorites files
     // don't have a subtitleTrack value for every file, which is fixed as soon as they
     // use a version that includes this

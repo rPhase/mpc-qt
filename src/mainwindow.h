@@ -50,6 +50,9 @@ public:
     void unfreezeWindow();
     void fixMpvwSize();
     void setActionPlayLoopUse();
+    double abLoopA() const;
+    double abLoopB() const;
+    void setAbLoop(double a, double b);
     void setRemoveFileNotRecycle();
     void updateLanguage();
     bool fullscreenMode() const;
@@ -141,6 +144,7 @@ signals:
     void dvdbdOpened(QUrl what);
     void streamOpened(QUrl what);
     void recentOpened(TrackInfo info);
+    void favoriteOpened(TrackInfo info);
     void recentClear();
     void takeImage(Helpers::ScreenshotRender render);
     void takeImageAutomatically(Helpers::ScreenshotRender render);

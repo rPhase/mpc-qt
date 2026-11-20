@@ -792,8 +792,13 @@ void Flow::setupMainWindowConnections()
 void Flow::setupManagerConnections()
 {
     // manager -> favorites
+    // Attach the current AB loop (kept by the main window) to new favorites
     connect(playbackManager, &PlaybackManager::currentTrackInfo,
-            favoritesWindow, &FavoritesWindow::addTrack);
+            this, [this](TrackInfo track) {
+        track.loopA = mainWindow->abLoopA();
+        track.loopB = mainWindow->abLoopB();
+        favoritesWindow->addTrack(track);
+    });
 
     // manager -> properties
     connect(playbackManager, &PlaybackManager::aboutToStartPlayingFile,
@@ -1016,6 +1021,8 @@ void Flow::setupFlowConnections()
             this, &Flow::loadPlaylistsBackup);
     connect(mainWindow, &MainWindow::recentOpened,
             this, &Flow::mainwindow_recentOpened);
+    connect(mainWindow, &MainWindow::favoriteOpened,
+            this, &Flow::mainwindow_favoriteOpened);
     connect(mainWindow, &MainWindow::recentClear,
             this, &Flow::mainwindow_recentClear);
     connect(mainWindow, &MainWindow::takeImage,
@@ -1563,6 +1570,25 @@ void Flow::mainwindow_recentOpened(const TrackInfo &track)
         playbackManager->openFile(track.url);
 }
 
+void Flow::mainwindow_favoriteOpened(const TrackInfo &track)
+{
+    // Start where the favorite was saved; with an AB loop, make sure we start
+    // inside it
+    double start = track.position;
+    if (track.hasLoop()) {
+        double a = track.loopA >= 0 ? track.loopA : 0;
+        double b = track.loopB >= 0 ? track.loopB : track.length;
+        if (start < a || start > b)
+            start = a;
+    }
+    pendingFavorite.url = track.url;
+    pendingFavorite.start = start;
+    pendingFavorite.loopA = track.loopA;
+    pendingFavorite.loopB = track.loopB;
+    pendingFavorite.armed = false;
+    mainwindow_recentOpened(track);
+}
+
 void Flow::mainwindow_recentClear()
 {
     recentFiles.clear();
@@ -1701,7 +1727,12 @@ void Flow::manager_playingNextFile()
 void Flow::manager_playLengthChanged() {
     Logger::log(logModule, "manager_playLengthChanged");
     updateRecentPosition(false);
-    if (repeatAfter)
+    if (pendingFavorite.armed && (pendingFavorite.loopA >= 0 || pendingFavorite.loopB >= 0)) {
+        // The file is loaded now, so the loop won't be cleared by the new-file reset
+        mainWindow->setAbLoop(pendingFavorite.loopA, pendingFavorite.loopB);
+        pendingFavorite = PendingFavorite();
+    }
+    else if (repeatAfter)
         mainWindow->setActionPlayLoopUse();
 }
 
@@ -1733,6 +1764,14 @@ void Flow::manager_startedPlayingFile(QUrl url)
                 break;
             }
         }
+    }
+    if (pendingFavorite.start >= 0 && pendingFavorite.url == url) {
+        // Opened from favorites: its saved position wins over recents
+        position = pendingFavorite.start;
+        pendingFavorite.armed = true;
+    }
+    else {
+        pendingFavorite = PendingFavorite();
     }
     playbackManager->navigateToTime(position);
 }

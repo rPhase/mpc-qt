@@ -128,6 +128,9 @@ public:
     int64_t videoTrack;
     int64_t audioTrack;
     int64_t subtitleTrack;
+    double loopA = -1;      // AB loop start (seconds), < 0 if unset
+    double loopB = -1;      // AB loop end (seconds), < 0 if unset
+    bool hasLoop() const { return loopA >= 0 || loopB >= 0; }
     QVariantMap toVMap() const;
     void fromVMap(const QVariantMap &map);
     bool operator ==(const TrackInfo &track) const;

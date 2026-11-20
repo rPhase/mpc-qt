@@ -360,6 +360,24 @@ void MainWindow::setActionPlayLoopUse()
     ui->actionPlayLoopUse->setChecked(true);
 }
 
+double MainWindow::abLoopA() const
+{
+    return positionSlider_->loopA();
+}
+
+double MainWindow::abLoopB() const
+{
+    return positionSlider_->loopB();
+}
+
+void MainWindow::setAbLoop(double a, double b)
+{
+    positionSlider_->setLoopA(a);
+    positionSlider_->setLoopB(b);
+    // Toggling re-arms the loop; the toggled slot fills in a missing A or B
+    setActionPlayLoopUse();
+}
+
 void MainWindow::setRemoveFileNotRecycle()
 {
     if (qEnvironmentVariableIsSet("FLATPAK_ID"))
@@ -1972,10 +1990,15 @@ void MainWindow::setFavoriteTracks(QList<TrackInfo> files, QList<TrackInfo> stre
     auto addTracks = [&](const QList<TrackInfo> &tracks) {
         for (const auto &t : tracks) {
             auto a = new QAction(this);
-            a->setText(t.title);
+            QString text = t.title;
+            if (t.hasLoop())
+                text += QString(" [A-B %1 - %2]")
+                        .arg(t.loopA >= 0 ? Helpers::toDateFormat(t.loopA) : QString("-"),
+                             t.loopB >= 0 ? Helpers::toDateFormat(t.loopB) : QString("-"));
+            a->setText(text);
             connect(a, &QAction::triggered,
                     a, [t, this]() {
-                emit this->recentOpened(t);
+                emit this->favoriteOpened(t);
             });
             addAction(a);
         }

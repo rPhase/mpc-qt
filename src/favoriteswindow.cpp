@@ -178,8 +178,14 @@ void FavoritesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opt
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &option, painter);
 
     QString title = listItem->track().title;
-    QString time = Helpers::toDateFormat(listItem->track().position) + " / "
-                   + Helpers::toDateFormat(listItem->track().length);
+    const TrackInfo &track = listItem->track();
+    QString time = Helpers::toDateFormat(track.position) + " / "
+                   + Helpers::toDateFormat(track.length);
+    if (track.hasLoop())
+        time = QString("A-B %1 - %2   ")
+               .arg(track.loopA >= 0 ? Helpers::toDateFormat(track.loopA) : QString("-"),
+                    track.loopB >= 0 ? Helpers::toDateFormat(track.loopB) : QString("-"))
+               + time;
     QRect rc = option.rect.adjusted(3, 0, -3, 0);
     painter->drawText(rc, Qt::AlignRight|Qt::AlignCenter, time);
     rc.adjust(0, 0, -(3 + option.fontMetrics.horizontalAdvance(time)), 0);

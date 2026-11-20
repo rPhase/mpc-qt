@@ -82,6 +82,7 @@ private slots:
     void mainwindow_windowMaximized();
     void mainwindow_windowMoved();
     void mainwindow_recentOpened(const TrackInfo &track);
+    void mainwindow_favoriteOpened(const TrackInfo &track);
     void mainwindow_recentClear();
     void mainwindow_takeImage(Helpers::ScreenshotRender render);
     void mainwindow_takeImageAutomatically(Helpers::ScreenshotRender render);
@@ -175,6 +176,16 @@ private:
     bool nowPlayingDisplayingSubtitles = true;
     bool nowPlayingNoSubtitleTracks = false;
     bool repeatAfter = false;
+    // Favorite being opened: its start position and AB loop are applied as
+    // the file starts and once its length is known, respectively
+    struct PendingFavorite {
+        QUrl url;
+        double start = -1;
+        double loopA = -1;
+        double loopB = -1;
+        bool armed = false;
+    };
+    PendingFavorite pendingFavorite;
     QString screenshotDirectory;
     QString lastScreenshotDir;
     QString encodeDirectory;
