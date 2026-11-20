@@ -379,6 +379,12 @@ void MediaSlider::makeBackground()
     p.setBrush(loopColor);
     if (vLoopA >= 0 && vLoopB >= 0) {
         p.setBrush(loopColor);
+        // Recompute here: the maximum can change after the loop points were set
+        // (e.g. a loop applied while the new file's length isn't known to the
+        // slider yet), which would leave a stale zero-width area
+        double left = valueToX(vLoopA);
+        double right = valueToX(vLoopB);
+        loopArea = {left, grooveArea.top() + 1, right - left, grooveArea.height() - 2};
         dr(&p, loopArea);
     } else if (vLoopA >= 0) {
         double pos = valueToX(vLoopA);
