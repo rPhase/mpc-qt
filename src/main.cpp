@@ -1681,6 +1681,9 @@ void Flow::mainwindow_optionsOpenRequested()
 
 void Flow::manager_stateChanged(PlaybackManager::PlaybackState state, bool isPlaybackPaused)
 {
+    if (state == PlaybackManager::PlayingState)
+        applyPendingFavoriteLoop();
+
     // Do nothing if we don't have to
     if (!manipulateScreensaver)
         return;
@@ -1727,13 +1730,29 @@ void Flow::manager_playingNextFile()
 void Flow::manager_playLengthChanged() {
     Logger::log(logModule, "manager_playLengthChanged");
     updateRecentPosition(false);
-    if (pendingFavorite.armed && (pendingFavorite.loopA >= 0 || pendingFavorite.loopB >= 0)) {
-        // The file is loaded now, so the loop won't be cleared by the new-file reset
-        mainWindow->setAbLoop(pendingFavorite.loopA, pendingFavorite.loopB);
-        pendingFavorite = PendingFavorite();
-    }
+    if (pendingFavorite.armed && (pendingFavorite.loopA >= 0 || pendingFavorite.loopB >= 0))
+        applyPendingFavoriteLoop();
     else if (repeatAfter)
         mainWindow->setActionPlayLoopUse();
+}
+
+// Applies the AB loop of a favorite that was just opened. It must wait until the
+// file is really playing and its length is known: earlier than that, the new-file
+// reset (or a stale 0 length) can wipe the loop again. Called from both the
+// length-changed and state-changed handlers; whichever comes last does the work.
+void Flow::applyPendingFavoriteLoop()
+{
+    if (!pendingFavorite.armed ||
+        (pendingFavorite.loopA < 0 && pendingFavorite.loopB < 0))
+        return;
+    auto state = playbackManager->playbackState();
+    double length = mainWindow->mpvObject()->playLength();
+    if (state != PlaybackManager::PlayingState || length <= 0)
+        return;
+    LogStream(logModule) << "applying favorite AB loop " << pendingFavorite.loopA
+                         << " - " << pendingFavorite.loopB;
+    mainWindow->setAbLoop(pendingFavorite.loopA, pendingFavorite.loopB);
+    pendingFavorite = PendingFavorite();
 }
 
 void Flow::manager_openingNewFile()

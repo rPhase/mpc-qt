@@ -89,6 +89,7 @@ private slots:
     void mainwindow_takeThumbnails();
     void mainwindow_optionsOpenRequested();
     void manager_playLengthChanged();
+    void applyPendingFavoriteLoop();
     void manager_stateChanged(PlaybackManager::PlaybackState state, bool isPlaybackPaused);
     void manager_fileClosed();
     void manager_subtitlesVisible(bool visible);
